@@ -1,0 +1,195 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8" />
+    <title>Smokey's journey : Road to Championship</title>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.11.0/dist/phaser.js"></script>
+    <style type="text/css">
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<script type="text/javascript">
+
+    var config = {
+        type: Phaser.AUTO,
+        width: 9000,
+        height: 2160,
+        physics: {
+            default: 'arcade',
+            arcade: {
+                gravity: { y: 300 },
+                debug: false
+            }
+        },
+        input:{gamepad:true},
+        scene: {
+            preload: preload,
+            create: create,
+            update: update
+        }
+    };
+//---------------------------------------------------------------------- VARIABLES ----------------------------------------------------------------------
+    var game = new Phaser.Game(config);
+
+    var player;
+    var platforms;
+    var cursors;
+    var groupeBullets;
+    var boutonFeu;
+    var cibles;
+    
+//----------------------- PRELOAD -----------------------------------------------------------------------------------------------------------------------
+    
+    function preload () {
+        this.load.image('bordure', 'assets/bordure2.png');
+        
+        //plateformes
+        this.load.image('arbreGeant', 'assets/plateformes/arbreGeant.png');
+        
+        
+        this.load.image('ciel', 'assets/ciel.png');
+        this.load.image('sol', 'assets/sol.png');
+        this.load.image('arbres', 'assets/arbres.png');
+        this.load.image('montagne', 'assets/montagne.png');
+        this.load.image('star', 'assets/star.png');
+        this.load.image('bomb', 'assets/bomb.png');
+        this.load.spritesheet('dude', 'assets/dude.png', { frameWidth: 64, frameHeight: 94 });
+        this.load.image('bullet', 'assets/bullet.png');
+        this.load.image('cible', 'assets/cible.png');
+    }
+//----------------------- CREATE -------------------------------------------------------------------------------------------------------------------------
+    function create () {
+        
+//---------------------------------------------------------------------- BACKGROUND ----------------------------------------------------------------------
+        this.add.image(4500, 1080, 'ciel').setScrollFactor(0.20,1);
+        this.add.image(4500, 1275, 'montagne').setScrollFactor(0.30,1);
+        this.add.image(4500, 1275, 'arbres').setScrollFactor(0.70,1);
+
+//---------------------------------------------------------------------- PLATEFORMES ----------------------------------------------------------------------
+        
+        
+        platforms = this.physics.add.staticGroup();
+
+        platforms.create(4500, 2160, 'sol');
+        platforms.create(9006, 1080, 'bordure');
+        
+        //platforms.create(400, 700, 'ground').setScale(6).refreshBody();
+
+        
+        platforms.create(3040, 1225, 'arbreGeant');
+        platforms.create(6900, 1225, 'arbreGeant');
+        
+        
+
+//---------------------------------------------------------------------- PLAYER ----------------------------------------------------------------------
+        
+        player = this.physics.add.sprite(100, 1910, 'dude');
+        player.direction = 'right';
+        player.setBounce(0);
+        player.setCollideWorldBounds(true);
+        this.physics.add.collider(player, platforms);
+        
+//---------------------------------------------------------------------- CAMERA ----------------------------------------------------------------------        
+        
+
+        this.cameras.main.setSize(1920, 1080);
+        this.cameras.main.setBounds(0, 0, 9000, 3283)
+        this.cameras.main.startFollow(player);
+        
+        groupeBullets = this.physics.add.group();
+        
+        cibles = this.physics.add.group({
+            key: 'cible',
+            repeat: 7,
+            setXY: { x: 12, y: 0, stepX: 110 }
+        });
+        cibles.children.iterate(function (cible) {
+            cible.pointsVie=Phaser.Math.Between(1, 5);;
+            cible.y = Phaser.Math.Between(10,250);
+            cible.setBounce(1);
+        });
+
+    this.physics.add.collider(cibles, platforms);
+    this.physics.add.overlap(groupeBullets, cibles, hit, null,this);
+        
+        this.anims.create({
+            key: 'left',
+            frames: this.anims.generateFrameNumbers('dude', { start: 0, end: 3 }),
+            frameRate: 10,
+            repeat: 1
+        });
+
+        this.anims.create({
+            key: 'turn',
+            frames: [ { key: 'dude', frame: 4 } ],
+            frameRate: 20
+        });
+
+        this.anims.create({
+            key: 'right',
+            frames: this.anims.generateFrameNumbers('dude', { start: 5, end: 8 }),
+            frameRate: 11,
+            repeat: 1
+        });
+
+        cursors = this.input.keyboard.createCursorKeys();
+        boutonFeu = this.input.keyboard.addKey('A');
+        
+        
+    }
+//----------------------- UPDATE -------------------------------------------------------------------------------------------------------------------------
+    
+    function update () {
+        if (cursors.left.isDown)  {
+            player.direction = 'left';
+            player.setVelocityX(-600);
+            player.anims.play('left', true);
+        }
+        else if (cursors.right.isDown) {
+            player.direction = 'right';
+            player.setVelocityX(600);
+            player.anims.play('right', true);
+        }
+        else  {
+            player.setVelocityX(0);
+            player.anims.play('turn');
+        }
+        if (cursors.up.isDown && player.body.touching.down) {
+            player.setVelocityY(-400);
+        }
+        if (cursors.down.isDown )
+        {
+            player.setVelocityY(800);
+        }
+        if ( Phaser.Input.Keyboard.JustDown(boutonFeu)) {
+            tirer(player);
+        }
+    }
+
+function tirer(player) {
+        var coefDir;
+	    if (player.direction == 'left') { coefDir = -1; } else { coefDir = 1 }
+        // on crée la balle a coté du joueur
+        var bullet = groupeBullets.create(player.x + (25 * coefDir), player.y - 4, 'bullet');
+        // parametres physiques de la balle.
+        bullet.setCollideWorldBounds(true);
+        bullet.body.allowGravity =false;
+        bullet.setVelocity(1000 * coefDir, 0); // vitesse en x et en y
+}
+
+function hit (bullet, cible) {
+  cible.pointsVie--;
+  if (cible.pointsVie==0) {
+    cible.destroy(); 
+  } 
+   bullet.destroy();
+}
+   
+</script>
+
+</body>
+</html>
