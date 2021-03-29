@@ -66,6 +66,8 @@
         this.load.image('game_over', 'assets/game_over.png');
         this.load.image('victoire', 'assets/victoire.png');
         
+        this.load.image('tortueGlace', 'assets/tortueGlace.png');
+        
         
         this.load.image('ciel', 'assets/ciel.png');
         this.load.image('sol', 'assets/sol.png');
@@ -81,7 +83,7 @@
         this.load.image('bdn', 'assets/bdn.png');
         this.load.image('boule_de_neige', 'assets/bouleDeNeigeItem.png');
         this.load.image('ceinture', 'assets/ceinture.png');
-        this.load.image('cible', 'assets/cible.png');
+        
     }
 //----------------------- CREATE -------------------------------------------------------------------------------------------------------------------------
     function create () {
@@ -111,7 +113,8 @@
         platforms.create(2450, 775, 'petitePlateforme');
         platforms.create(750, 575, 'petitePlateforme');
         platforms.create(200, 300, 'petitePlateforme');
-        platforms.create(5000, 500, 'paroiRocailleuse');
+        platforms.create(5000, 500, 'paroiRocailleuse').setScale(1);
+        platforms.create(5000, 1100, 'paroiRocailleuse').setScale(1);
         
         platforms.create(1450, 775, 'moyennePlateforme');
         
@@ -148,6 +151,15 @@
         ennemi2.pointsVie=3; 
         ennemi2.setBounce(0);
         
+        tortue = this.physics.add.group({
+        key : 'tortue',
+        repeat: 0
+        
+        });
+
+        var tortue1 = tortue.create(1800, 550, 'tortueGlace').setScale(2);
+        var tortue2 = tortue.create(6000, 1240, 'tortueGlace').setScale(2);
+        var tortue3 = tortue.create(1200, 3000, 'tortueGlace').setScale(2);
         
         
         
@@ -277,6 +289,7 @@
         this.physics.add.collider(player, platforms);
         this.physics.add.collider(ennemi, platforms);
         this.physics.add.collider(ennemi2, platforms);
+        this.physics.add.collider(tortue, platforms);
        
        
         this.physics.add.collider(ennemi5, platforms);
@@ -297,7 +310,7 @@
         this.physics.add.overlap(player, ceinture, getCeinture, null, this);
         this.physics.add.overlap(groupeBdn, ennemi, hit, null,this);
         this.physics.add.overlap(groupeBdn, ennemi2, hit, null,this);
-     
+        this.physics.add.overlap(player, tortue, hitTortue, null, this);
 
         this.physics.add.overlap(groupeBdn, ennemi5, hit, null,this);
         this.physics.add.overlap(boule_de_neige, ennemi, null, this);
@@ -315,7 +328,10 @@
         if (cursors.left.isDown)  {
             player.direction = 'left';
             if (player.body.touching.down){
-                player.setVelocityX(-400); //remettre a 400
+                player.setVelocityX(-400);
+            }
+            else if (player.body.touching.grandePlateformeGlace){
+                player.setVelocityX(-4000);
             }
             else {
                 player.setVelocityX(-600);
@@ -325,7 +341,10 @@
         else if (cursors.right.isDown) {
             player.direction = 'right';
             if (player.body.touching.down){
-                player.setVelocityX(400); //remettre a 400
+                player.setVelocityX(400); 
+            }
+            else if (player.body.touching.grandePlateformeGlace){
+                player.setVelocityX(4000);
             }
             else {
                 player.setVelocityX(600);
@@ -426,8 +445,8 @@ function getBdn(player, boule_de_neige){
 function getCeinture(player, ceinture){
     ceinture.disableBody(true, true);
     boule = true;
-    this.add.image(960, 540, 'victoire').setScrollFactor(0);
-    player.setTint(0xff0000);
+    this.add.image(960, 340, 'victoire').setScrollFactor(0);
+    player.setTint(0x008a1a);
     player.anims.play('turn');
     this.physics.pause();
     gameOver = true;
@@ -478,7 +497,7 @@ function hitEnnemi (player, ennemi)
     player.anims.play('turn');
     
     if(vie == 0){
-        this.add.image(960, 540, 'game_over').setScrollFactor(0);
+        this.add.image(960, 140, 'game_over').setScrollFactor(0);
         player.setTint(0xff0000);
         player.anims.play('turn');
         this.physics.pause();
@@ -542,6 +561,23 @@ function hitEnnemi5 (player, ennemi5)
     }
 
 }
+    
+function hitTortue (player, tortue)
+{
+    
+    vie -= 3;
+
+    player.anims.play('turn');
+    
+    if(vie <= 0){
+        this.add.image(960, 540, 'game_over').setScrollFactor(0);
+        player.setTint(0xff0000);
+        player.anims.play('turn');
+        this.physics.pause();
+        gameOver = true;
+    }
+
+}    
     
 </script>
 
